@@ -6,8 +6,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import TSystemsLogo from '../../../public/images/T-SYSTEMS-LOGO2013.svg';
 import AuthButton from '../auth-button/AuthButton';
-import { useState } from 'react';
-import CreateConversationModal from '../create-conversation-modal/CreateConversationModal';
 import ChatAside from '../chat-aside/ChatAside';
 
 const UILayout = ({
@@ -15,53 +13,44 @@ const UILayout = ({
 }: Readonly<{
   children: React.ReactNode;
 }>) => {
-  const [isModalVisible, setIsModalVisible] = useState(false);
-
   return (
-    <>
-      <Layout style={{ minHeight: '100vh' }}>
-        <Header
+    <Layout style={{ minHeight: '100vh' }}>
+      <Header
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '1rem',
+        }}
+      >
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <Link href="/">
+            <Image
+              src={TSystemsLogo}
+              alt="logo"
+              width={120}
+              height={70}
+              style={{ filter: 'invert(1) brightness(100) contrast(1)' }}
+            />
+          </Link>
+          <div className="text-lg font-bold">Real-time Chat</div>
+        </div>
+        <AuthButton />
+      </Header>
+      <Layout>
+        <ChatAside />
+        <Content
           style={{
+            padding: '30px 50px',
             display: 'flex',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
             alignItems: 'center',
-            gap: '1rem',
           }}
         >
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <Link href="/">
-              <Image
-                src={TSystemsLogo}
-                alt="logo"
-                width={120}
-                height={70}
-                style={{ filter: 'invert(1) brightness(100) contrast(1)' }}
-              />
-            </Link>
-            <div className="text-lg font-bold">Real-time Chat</div>
-          </div>
-          <AuthButton />
-        </Header>
-        <Layout>
-          <ChatAside setIsModalVisible={setIsModalVisible} />
-          <Content
-            style={{
-              padding: '30px 50px',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            {children}
-          </Content>
-        </Layout>
+          {children}
+        </Content>
       </Layout>
-
-      <CreateConversationModal
-        open={isModalVisible}
-        closeModal={() => setIsModalVisible(false)}
-      />
-    </>
+    </Layout>
   );
 };
 

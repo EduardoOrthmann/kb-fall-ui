@@ -1,80 +1,65 @@
 'use client';
 
-import { Avatar, Button, Menu } from 'antd';
+import { Avatar, Menu } from 'antd';
 import Sider from 'antd/es/layout/Sider';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { DeleteOutlined, FormOutlined, UserOutlined } from '@ant-design/icons';
+import { useQuery } from '@tanstack/react-query';
+import { FormOutlined, UserOutlined } from '@ant-design/icons';
 import { useAppContext } from '@/store/AppContextProvider';
 import { useKeycloak } from '@react-keycloak/web';
 import { Conversation } from '@/utils/types';
-import { deleteConversation, fetchConversations } from '@/utils/apiService';
-import { MouseEvent } from 'react';
+import { fetchConversations } from '@/utils/apiService';
+import { MenuItemType } from 'antd/es/menu/interface';
+import DeleteConversation from '../delete-conversation/DeleteConversation';
+import { useState } from 'react';
+import CreateConversationModal from '../create-conversation-modal/CreateConversationModal';
 
-interface ChatAsideProps {
-  setIsModalVisible: (value: boolean) => void;
-}
-
-const ChatAside = ({ setIsModalVisible }: ChatAsideProps) => {
+const ChatAside = () => {
   const { selectedConversation, setSelectedConversation } = useAppContext();
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const { keycloak } = useKeycloak();
-  const queryClient = useQueryClient();
 
   const { data: conversations = [] } = useQuery<Conversation[]>({
     queryKey: ['conversations', keycloak.tokenParsed?.sub],
     queryFn: () => fetchConversations(keycloak.tokenParsed?.sub as string),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: deleteConversation,
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['conversations', keycloak.tokenParsed?.sub],
-      });
+  const menuItems: MenuItemType[] = [
+    {
+      key: 'new',
+      icon: <FormOutlined />,
+      label: 'New Conversation',
+      onClick: () => setIsModalVisible(true),
+      style: { marginBottom: '15px' },
     },
-  });
-
-  const handleDeleteConversation = (
-    e: MouseEvent<HTMLElement, MouseEvent>,
-    conversationId: string
-  ) => {
-    e.stopPropagation();
-
-    deleteMutation.mutate(conversationId);
-  };
+    ...conversations.map((conv) => ({
+      key: conv._id,
+      icon: <Avatar icon={<UserOutlined />} />,
+      onClick: () => setSelectedConversation(conv._id),
+      label: (
+        <div className="conversation-item">
+          {conv.name}
+          <DeleteConversation conversationId={conv._id} />
+        </div>
+      ),
+    })),
+  ];
 
   return (
-    <Sider width={250}>
-      <Menu
-        mode="inline"
-        selectedKeys={[selectedConversation as string]}
-        style={{ height: '100%' }}
-      >
-        <Menu.Item
-          key="new"
-          onClick={() => setIsModalVisible(true)}
-          icon={<FormOutlined />}
-          style={{ marginBottom: '15px' }}
-        >
-          New Conversation
-        </Menu.Item>
-        {conversations.map((conv) => (
-          <Menu.Item
-            key={conv._id}
-            icon={<Avatar icon={<UserOutlined />} />}
-            onClick={() => setSelectedConversation(conv._id)}
-            className="conversation-item"
-          >
-            {conv.name}
-            <Button
-              type="text"
-              icon={<DeleteOutlined />}
-              className="delete-icon"
-              onClick={() => handleDeleteConversation}
-            ></Button>
-          </Menu.Item>
-        ))}
-      </Menu>
-    </Sider>
+    <>
+      <Sider width={250}>
+        <Menu
+          mode="inline"
+          selectedKeys={[selectedConversation as string]}
+          style={{ height: '100%' }}
+          items={menuItems}
+        />
+      </Sider>
+
+      <CreateConversationModal
+        open={isModalVisible}
+        closeModal={() => setIsModalVisible(false)}
+      />
+    </>
   );
 };
 

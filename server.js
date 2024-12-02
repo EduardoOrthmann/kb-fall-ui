@@ -1,18 +1,28 @@
-import { api } from '@/lib/axios';
-import { HOSTNAME, PORT, MONGODB_URL } from '@/utils/constants';
+import 'dotenv/config';
 import express from 'express';
 import mongoose from 'mongoose';
 import next from 'next';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
+import axios from 'axios';
+
+export const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  withCredentials: false,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 const dev = process.env.NODE_ENV !== 'production';
+const hostname = process.env.NEXT_PUBLIC_HOSTNAME;
+const port = process.env.NEXT_PUBLIC_PORT;
 
-const app = next({ dev, HOSTNAME, PORT });
+const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
 
 mongoose
-  .connect(MONGODB_URL)
+  .connect(process.env.NEXT_PUBLIC_MONGODB_URI)
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.log('MongoDB connection error:', err));
 
@@ -132,8 +142,8 @@ app.prepare().then(() => {
       console.error(err);
       process.exit(1);
     })
-    .listen(PORT, () => {
-      console.log(`> Ready on http://${HOSTNAME}:${PORT}`);
+    .listen(port, () => {
+      console.log(`> Ready on http://${hostname}:${port}`);
     });
 });
 
