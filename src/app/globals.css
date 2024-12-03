@@ -44,3 +44,8 @@
 .conversation-item:hover .delete-icon {
   visibility: visible;
 }
+
+.upload-file .ant-upload-list-item:hover {
+  cursor: pointer;
+  color: #1677ff;
+}

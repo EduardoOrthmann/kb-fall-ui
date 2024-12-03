@@ -9,6 +9,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAppContext } from '@/store/AppContextProvider';
 import { Message } from '@/utils/types';
 import { fetchMessages } from '@/utils/apiService';
+import UploadFile from '@/components/upload-file/UploadFile';
 
 const { TextArea } = Input;
 
@@ -88,6 +89,7 @@ const Home = () => {
         <List
           itemLayout="horizontal"
           dataSource={messages}
+          locale={{ emptyText: <UploadFile /> }}
           renderItem={(msg) => (
             <List.Item>
               <List.Item.Meta
