@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button, message } from 'antd';
 import { MouseEvent, useState } from 'react';
 import ConfirmDelete from '../confirm-delete/ConfirmDelete';
+import { useAppContext } from '@/store/AppContextProvider';
 
 interface DeleteButtonProps {
   conversationId: string;
@@ -20,6 +21,7 @@ const DeleteConversation = ({
   const [isModalVisible, setIsModalVisible] = useState(false);
   const { keycloak } = useKeycloak();
   const queryClient = useQueryClient();
+  const { selectedConversation, setSelectedConversation } = useAppContext();
 
   const deleteMutation = useMutation({
     mutationFn: deleteConversation,
@@ -27,6 +29,11 @@ const DeleteConversation = ({
       queryClient.invalidateQueries({
         queryKey: ['conversations', keycloak.tokenParsed?.sub],
       });
+
+      if (selectedConversation === conversationId) {
+        // @ts-expect-error
+        setSelectedConversation(null);
+      }
 
       message.success('Conversation deleted successfully!');
 

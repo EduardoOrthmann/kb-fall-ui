@@ -10,7 +10,7 @@ import { Conversation } from '@/utils/types';
 import { fetchConversations } from '@/utils/apiService';
 import { MenuItemType } from 'antd/es/menu/interface';
 import DeleteConversation from '../delete-conversation/DeleteConversation';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import CreateConversationModal from '../create-conversation-modal/CreateConversationModal';
 
 const ChatAside = () => {
@@ -23,26 +23,31 @@ const ChatAside = () => {
     queryFn: () => fetchConversations(keycloak.tokenParsed?.sub as string),
   });
 
-  const menuItems: MenuItemType[] = [
-    {
-      key: 'new',
-      icon: <FormOutlined />,
-      label: 'New Conversation',
-      onClick: () => setIsModalVisible(true),
-      style: { marginBottom: '15px' },
-    },
-    ...conversations.map((conv) => ({
-      key: conv._id,
-      icon: <Avatar icon={<UserOutlined />} />,
-      onClick: () => setSelectedConversation(conv._id),
-      label: (
-        <div className="conversation-item">
-          {conv.name}
-          <DeleteConversation conversationId={conv._id} />
-        </div>
-      ),
-    })),
-  ];
+  const menuItems: MenuItemType[] = useMemo(
+    () => [
+      {
+        key: 'new',
+        icon: <FormOutlined />,
+        label: 'New Conversation',
+        onClick: () => setIsModalVisible(true),
+        style: { marginBottom: '15px' },
+      },
+      ...conversations.map((conv) => ({
+        key: conv._id,
+        icon: <Avatar icon={<UserOutlined />} />,
+        onClick: () => setSelectedConversation(conv._id),
+        label: (
+          <div className="conversation-item">
+            {conv.name}
+            <div onClick={(e) => e.stopPropagation()}>
+              <DeleteConversation conversationId={conv._id} />
+            </div>
+          </div>
+        ),
+      })),
+    ],
+    [conversations, setSelectedConversation]
+  );
 
   return (
     <>

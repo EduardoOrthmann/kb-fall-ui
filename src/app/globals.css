@@ -45,6 +45,11 @@
   visibility: visible;
 }
 
+.conversation-item {
+  display: flex;
+  gap: 10px;
+}
+
 .upload-file .ant-upload-list-item:hover {
   cursor: pointer;
   color: #1677ff;
