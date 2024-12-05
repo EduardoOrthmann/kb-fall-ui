@@ -105,17 +105,9 @@ app.prepare().then(() => {
       if (conversation) {
         if (msg.isJsonFile) {
           try {
-            const interval = setInterval(() => {
-              const progress = Math.min(100, Math.random() * 20 + 80);
-              socket.emit('progress', { progress, conversationId });
-              if (progress >= 100) clearInterval(interval);
-            }, 1000);
-
             const response = await api.post('/upload-file', {
               json_request: msg.text,
             });
-
-            clearInterval(interval);
 
             const aiMessage = {
               text: response.data,
@@ -131,7 +123,6 @@ app.prepare().then(() => {
             io.emit('message', aiMessage);
           } catch (error) {
             console.error('Failed to fetch AI response:', error);
-            socket.emit('progress', { progress: 0, error: true, conversationId });
           }
         } else {
           conversation.messages.push(msg);

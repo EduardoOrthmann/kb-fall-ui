@@ -1,31 +1,20 @@
 'use client';
 
 import { InboxOutlined } from '@ant-design/icons';
-import {
-  message,
-  Upload,
-  UploadFile as IUploadFile,
-  UploadProps,
-  Progress,
-} from 'antd';
+import { message, Upload, UploadFile as IUploadFile, UploadProps } from 'antd';
 import React, { useEffect, useState } from 'react';
 import OpenJsonFileModal from '../open-json-file-modal/OpenJsonFileModal';
 import { readAsText } from '@/utils/fileUtils';
 import { socket } from '@/socket';
 import { useKeycloak } from '@react-keycloak/web';
 import { Message } from '@/utils/types';
+import ProgressBar from '../progress-bar/ProgressBar';
 
 const { Dragger } = Upload;
 
 interface UploadFileProps {
   conversationId: string;
   numberOfMessages: number;
-}
-
-interface HandleProgressProps {
-  progress: number;
-  error?: boolean;
-  conversationId: string;
 }
 
 const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
@@ -37,7 +26,6 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processingProgress, setProcessingProgress] = useState(0);
 
   useEffect(() => {
     setUploadedFile((prevState) => ({
@@ -45,38 +33,12 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
       [conversationId]: null,
     }));
     setFileContent(null);
-    setIsProcessing(false);
-    setProcessingProgress(0);
-  }, [conversationId]);
-
-  useEffect(() => {
-    const handleProgress = ({
-      progress,
-      error,
-      conversationId: id,
-    }: HandleProgressProps) => {
-      if (id === conversationId) {
-        if (error) {
-          message.error('Error processing the file.');
-          setProcessingProgress(0);
-          setIsProcessing(false);
-          return;
-        }
-
-        setProcessingProgress(progress);
-        setIsProcessing(progress < 100);
-      }
-    };
-
-    socket.on('progress', handleProgress);
-
-    return () => {
-      socket.off('progress', handleProgress);
-    };
   }, [conversationId]);
 
   const handleFileUpload = async (fileContent: string) => {
     try {
+      setIsProcessing(true);
+
       const messageData: Message = {
         text: fileContent,
         user: keycloak.tokenParsed?.preferred_username || 'Anonymous',
@@ -86,9 +48,16 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
       };
 
       socket.emit('message', messageData);
+
+      socket.on('message', (response: Message) => {
+        if (response.conversationId === conversationId && response.isJsonFile) {
+          setIsProcessing(false);
+        }
+      });
     } catch (error) {
       console.error('Error uploading and processing file:', error);
       message.error('Failed to upload and process the file.');
+      setIsProcessing(false);
     }
   };
 
@@ -127,19 +96,7 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
 
   return (
     <div>
-      {isProcessing && (
-        <>
-          <span>Searching for the solution...</span>
-          <Progress
-            percent={processingProgress}
-            status={processingProgress === 100 ? 'success' : 'active'}
-            strokeColor={{
-              '0%': '#108ee9',
-              '100%': '#87d068',
-            }}
-          />
-        </>
-      )}
+      {isProcessing && <ProgressBar isProcessing={isProcessing} />}
       {!currentFile && numberOfMessages < 1 && !isProcessing && (
         <Dragger {...props} height={250}>
           <p className="ant-upload-drag-icon">
