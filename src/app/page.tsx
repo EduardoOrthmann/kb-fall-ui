@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useKeycloak } from '@react-keycloak/web';
 import { Input, Button, List, Avatar, Card } from 'antd';
 import { SendOutlined, UserOutlined } from '@ant-design/icons';
 import { socket } from '../socket';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAppContext } from '@/store/AppContextProvider';
-import { Message } from '@/utils/types';
+import { Message, Solution } from '@/utils/types';
 import { fetchMessages } from '@/utils/apiService';
 import UploadFile from '@/components/upload-file/UploadFile';
+import SolutionTable from '@/components/solution-table/SolutionTable';
 
 const { TextArea } = Input;
 
@@ -20,7 +21,6 @@ const Home = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
-  // Fetch messages for selected conversation
   const { data: messages = [] } = useQuery<Message[]>({
     queryKey: ['messages', selectedConversation],
     queryFn: () => fetchMessages(selectedConversation as string),
@@ -64,7 +64,7 @@ const Home = () => {
   const sendMessage = async () => {
     if (!input.trim() || !selectedConversation) return;
 
-    const messageData = {
+    const messageData: Message = {
       text: input,
       user: keycloak.tokenParsed?.preferred_username || 'Anonymous',
       timestamp: new Date().toISOString(),
@@ -79,6 +79,36 @@ const Home = () => {
     setInput('');
   };
 
+  const handleRenderItem = useCallback(
+    (item: Message): React.ReactNode => {
+      if (!item.text) return null;
+
+      const itemText = Array.isArray(item.text) ? item.text[0] : item.text;
+      const description = item.isJsonFile ? (
+        <SolutionTable data={itemText as Solution} />
+      ) : (
+        (item.text as string)
+      );
+
+      return (
+        <List.Item>
+          <List.Item.Meta
+            avatar={<Avatar icon={<UserOutlined />} />}
+            title={item.user}
+            description={description}
+          />
+          {!item.isJsonFile && (
+            <div className="text-xs text-gray-400">
+              {' '}
+              {new Date(item.timestamp).toLocaleTimeString()}
+            </div>
+          )}
+        </List.Item>
+      );
+    },
+    [selectedConversation, messages]
+  );
+
   if (!initialized) return null;
   if (!keycloak.authenticated)
     return <div>Please log in to access the chat.</div>;
@@ -86,22 +116,14 @@ const Home = () => {
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <div className="h-96 overflow-y-auto mb-4 custom-scrollbar">
+        <UploadFile conversationId={selectedConversation ?? ''} numberOfMessages={messages.length} />
         <List
           itemLayout="horizontal"
           dataSource={messages}
-          locale={{ emptyText: <UploadFile /> }}
-          renderItem={(msg) => (
-            <List.Item>
-              <List.Item.Meta
-                avatar={<Avatar icon={<UserOutlined />} />}
-                title={msg.user}
-                description={msg.text}
-              />
-              <div className="text-xs text-gray-400">
-                {new Date(msg.timestamp).toLocaleTimeString()}
-              </div>
-            </List.Item>
-          )}
+          locale={{
+            emptyText: <div></div>,
+          }}
+          renderItem={handleRenderItem}
         />
         <div ref={messagesEndRef} />
       </div>

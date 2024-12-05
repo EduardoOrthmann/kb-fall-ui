@@ -47,6 +47,12 @@ const CreateConversationModal = ({
     }
   };
 
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      handleCreateConversation();
+    }
+  };
+
   return (
     <Modal
       title="Create New Conversation"
@@ -60,6 +66,7 @@ const CreateConversationModal = ({
             value={newConversationName}
             onChange={(e) => setNewConversationName(e.target.value)}
             placeholder="Enter conversation name"
+            onKeyUp={handleKeyPress}
           />
         </Form.Item>
       </Form>

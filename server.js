@@ -27,9 +27,10 @@ mongoose
   .catch((err) => console.log('MongoDB connection error:', err));
 
 const messageSchema = new mongoose.Schema({
-  text: String,
+  text: { type: [mongoose.Schema.Types.Mixed] },
   user: String,
   timestamp: String,
+  isJsonFile: Boolean,
 });
 
 const conversationSchema = new mongoose.Schema({
@@ -102,30 +103,62 @@ app.prepare().then(() => {
       const conversation = await Conversation.findById(conversationId);
 
       if (conversation) {
-        conversation.messages.push(msg);
-        await conversation.save();
+        if (msg.isJsonFile) {
+          try {
+            const interval = setInterval(() => {
+              const progress = Math.min(100, Math.random() * 20 + 80);
+              socket.emit('progress', { progress, conversationId });
+              if (progress >= 100) clearInterval(interval);
+            }, 1000);
 
-        socket.broadcast.emit('message', msg);
+            const response = await api.post('/upload-file', {
+              json_request: msg.text,
+            });
 
-        try {
-          const { data } = await api.post('/generate-response', {
-            conversation_id: conversationId,
-            messages: conversation.messages,
-          });
+            clearInterval(interval);
 
-          const aiMessage = {
-            text: data.response,
-            user: 'AI',
-            timestamp: new Date().toISOString(),
-            conversationId,
-          };
+            const aiMessage = {
+              text: response.data,
+              user: 'AI',
+              timestamp: new Date().toISOString(),
+              conversationId,
+              isJsonFile: true,
+            };
 
-          conversation.messages.push(aiMessage);
+            conversation.messages.push(aiMessage);
+            await conversation.save();
+
+            io.emit('message', aiMessage);
+          } catch (error) {
+            console.error('Failed to fetch AI response:', error);
+            socket.emit('progress', { progress: 0, error: true, conversationId });
+          }
+        } else {
+          conversation.messages.push(msg);
           await conversation.save();
 
-          io.emit('message', aiMessage);
-        } catch (error) {
-          console.error('Failed to fetch AI response:', error);
+          socket.broadcast.emit('message', msg);
+
+          try {
+            const { data } = await api.post('/generate-response', {
+              conversation_id: conversationId,
+              messages: conversation.messages,
+            });
+
+            const aiMessage = {
+              text: data.response,
+              user: 'AI',
+              timestamp: new Date().toISOString(),
+              conversationId,
+            };
+
+            conversation.messages.push(aiMessage);
+            await conversation.save();
+
+            io.emit('message', aiMessage);
+          } catch (error) {
+            console.error('Failed to fetch AI response:', error);
+          }
         }
       }
     });
