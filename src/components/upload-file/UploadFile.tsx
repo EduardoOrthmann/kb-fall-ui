@@ -14,8 +14,6 @@ import { readAsText } from '@/utils/fileUtils';
 import { socket } from '@/socket';
 import { useKeycloak } from '@react-keycloak/web';
 import { Message } from '@/utils/types';
-import { useQueryClient } from '@tanstack/react-query';
-import { useAppContext } from '@/store/AppContextProvider';
 
 const { Dragger } = Upload;
 
@@ -24,35 +22,39 @@ interface UploadFileProps {
   numberOfMessages: number;
 }
 
+interface HandleProgressProps {
+  progress: number;
+  error?: boolean;
+  conversationId: string;
+}
+
 const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
   const { keycloak } = useKeycloak();
-  const queryClient = useQueryClient();
-  const { selectedConversation } = useAppContext();
-  const [uploadedFile, setUploadedFile] = useState<IUploadFile | null>(null);
+
+  const [uploadedFile, setUploadedFile] = useState<
+    Record<string, IUploadFile | null>
+  >({});
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
 
   useEffect(() => {
-    return () => {
-      setUploadedFile(null);
-      setFileContent(null);
-      setIsProcessing(false);
-      setProcessingProgress(0);
-    }
-  }, []);
+    setUploadedFile((prevState) => ({
+      ...prevState,
+      [conversationId]: null,
+    }));
+    setFileContent(null);
+    setIsProcessing(false);
+    setProcessingProgress(0);
+  }, [conversationId]);
 
   useEffect(() => {
     const handleProgress = ({
       progress,
       error,
       conversationId: id,
-    }: {
-      progress: number;
-      error?: boolean;
-      conversationId: string;
-    }) => {
+    }: HandleProgressProps) => {
       if (id === conversationId) {
         if (error) {
           message.error('Error processing the file.');
@@ -84,10 +86,6 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
       };
 
       socket.emit('message', messageData);
-
-      queryClient.invalidateQueries({
-        queryKey: ['messages', selectedConversation],
-      });
     } catch (error) {
       console.error('Error uploading and processing file:', error);
       message.error('Failed to upload and process the file.');
@@ -103,19 +101,19 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
     disabled: isProcessing,
     onChange(info) {
       const { file } = info;
-      const { status } = file;
 
-      if (status === 'error') {
+      if (file.status === 'error') {
         message.error(`${info.file.name} file upload failed.`);
-        console.error('Error uploading file', info.file);
-
         return;
       }
 
-      if (status === 'done' && file.originFileObj) {
+      if (file.status === 'done' && file.originFileObj) {
         message.success(`${file.name} file uploaded successfully.`);
 
-        setUploadedFile(file);
+        setUploadedFile((prev) => ({
+          ...prev,
+          [conversationId]: file,
+        }));
 
         readAsText(file.originFileObj).then((content) => {
           setFileContent(content);
@@ -124,6 +122,8 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
       }
     },
   };
+
+  const currentFile = uploadedFile[conversationId] || null;
 
   return (
     <div>
@@ -140,7 +140,7 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
           />
         </>
       )}
-      {!uploadedFile && numberOfMessages < 1 && !isProcessing && (
+      {!currentFile && numberOfMessages < 1 && !isProcessing && (
         <Dragger {...props} height={250}>
           <p className="ant-upload-drag-icon">
             <InboxOutlined />
@@ -155,11 +155,11 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
         </Dragger>
       )}
 
-      {uploadedFile && (
+      {currentFile && (
         <Upload
           {...props}
           showUploadList={{ showPreviewIcon: true, showRemoveIcon: false }}
-          defaultFileList={[uploadedFile]}
+          defaultFileList={[currentFile]}
           onPreview={() => setIsModalVisible(true)}
           className="upload-file"
         />

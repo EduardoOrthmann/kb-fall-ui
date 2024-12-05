@@ -6,7 +6,6 @@ interface SolutionTableProps {
 }
 
 const SolutionTable = ({ data }: SolutionTableProps) => {
-  console.log('data', data);
   const columns = [
     {
       title: 'Field',

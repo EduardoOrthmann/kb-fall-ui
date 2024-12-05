@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useMemo, useState } from 'react';
 
 export interface IAppContext {
   selectedConversation: string | null;
@@ -16,13 +16,13 @@ const AppContextProvider = ({
     string | null
   >(null);
 
+  const value = useMemo(() => ({
+    selectedConversation,
+    setSelectedConversation,
+  }), [selectedConversation]);
+
   return (
-    <AppContext.Provider
-      value={{
-        selectedConversation,
-        setSelectedConversation,
-      }}
-    >
+    <AppContext.Provider value={value}>
       {children}
     </AppContext.Provider>
   );
