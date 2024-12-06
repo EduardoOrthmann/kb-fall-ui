@@ -33,7 +33,7 @@ const UILayout = ({
               style={{ filter: 'invert(1) brightness(100) contrast(1)' }}
             />
           </Link>
-          <div className="text-lg font-bold">KbFall Chat</div>
+          <div className="text-lg font-bold">KbVall Copilot</div>
         </div>
         <AuthButton />
       </Header>
