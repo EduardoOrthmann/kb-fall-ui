@@ -1,7 +1,7 @@
 'use client';
 
 import { InboxOutlined } from '@ant-design/icons';
-import { message, Upload, UploadFile as IUploadFile, UploadProps } from 'antd';
+import { Upload, UploadFile as IUploadFile, UploadProps } from 'antd';
 import React, { useEffect, useState } from 'react';
 import OpenJsonFileModal from '../open-json-file-modal/OpenJsonFileModal';
 import { readAsText } from '@/utils/fileUtils';
@@ -9,6 +9,7 @@ import { socket } from '@/socket';
 import { useKeycloak } from '@react-keycloak/web';
 import { Message } from '@/utils/types';
 import ProgressBar from '../progress-bar/ProgressBar';
+import { useMessageContext } from '@/store/AppContextProvider';
 
 const { Dragger } = Upload;
 
@@ -19,6 +20,7 @@ interface UploadFileProps {
 
 const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
   const { keycloak } = useKeycloak();
+  const messageApi = useMessageContext();
 
   const [uploadedFile, setUploadedFile] = useState<
     Record<string, IUploadFile | null>
@@ -56,7 +58,7 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
       });
     } catch (error) {
       console.error('Error uploading and processing file:', error);
-      message.error('Failed to upload and process the file.');
+      messageApi.error('Failed to upload and process the file.');
       setIsProcessing(false);
     }
   };
@@ -72,12 +74,12 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
       const { file } = info;
 
       if (file.status === 'error') {
-        message.error(`${info.file.name} file upload failed.`);
+        messageApi.error(`${info.file.name} file upload failed.`);
         return;
       }
 
       if (file.status === 'done' && file.originFileObj) {
-        message.success(`${file.name} file uploaded successfully.`);
+        messageApi.success(`${file.name} file uploaded successfully.`);
 
         setUploadedFile((prev) => ({
           ...prev,

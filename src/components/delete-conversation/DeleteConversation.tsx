@@ -7,8 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from 'antd';
 import { MouseEvent, useState } from 'react';
 import ConfirmDelete from '../confirm-delete/ConfirmDelete';
-import { useAppContext } from '@/store/AppContextProvider';
-import useMessage from 'antd/es/message/useMessage';
+import { useAppContext, useMessageContext } from '@/store/AppContextProvider';
 
 interface DeleteButtonProps {
   conversationId: string;
@@ -23,12 +22,12 @@ const DeleteConversation = ({
   const { keycloak } = useKeycloak();
   const queryClient = useQueryClient();
   const { selectedConversation, setSelectedConversation } = useAppContext();
-  const [message, contextHolder] = useMessage();
+  const messageApi = useMessageContext();
 
   const deleteMutation = useMutation({
     mutationFn: deleteConversation,
     onSuccess: () => {
-      message.success('Conversation deleted successfully!');
+      messageApi.success('Conversation deleted successfully!');
 
       queryClient.invalidateQueries({
         queryKey: ['conversations', keycloak.tokenParsed?.sub],
@@ -43,8 +42,8 @@ const DeleteConversation = ({
     },
     onError: (error) => {
       console.error(error);
-      message.error('Failed to delete conversation.');
-    }
+      messageApi.error('Failed to delete conversation.');
+    },
   });
 
   const handleDelete = () => {
@@ -64,7 +63,6 @@ const DeleteConversation = ({
 
   return (
     <>
-      {contextHolder}
       <Button
         type="text"
         icon={<DeleteOutlined />}

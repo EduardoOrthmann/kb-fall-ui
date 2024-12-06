@@ -1,7 +1,8 @@
 'use client';
 
 import useInternetSpeed from '@/hooks/useInternetSpeed';
-import { message, Progress } from 'antd';
+import { useMessageContext } from '@/store/AppContextProvider';
+import { Progress } from 'antd';
 import { useEffect, useState } from 'react';
 
 interface ProgressBarProps {
@@ -12,12 +13,13 @@ interface ProgressBarProps {
 const ProgressBar = ({ onComplete, isProcessing }: ProgressBarProps) => {
   const { speed: networkSpeed } = useInternetSpeed();
   const [progress, setProgress] = useState(0);
+  const messageApi = useMessageContext();
 
   useEffect(() => {
     if (!isProcessing) {
       if (progress < 100) {
-        setProgress(100); // Finalize to 100% when processing completes
-        message.success('Processing complete.');
+        setProgress(100);
+        messageApi.success('Processing complete.');
         if (onComplete) onComplete();
       }
       return;
@@ -36,8 +38,8 @@ const ProgressBar = ({ onComplete, isProcessing }: ProgressBarProps) => {
     const delays = getDynamicDelays(networkSpeed);
 
     const simulateProgress = async () => {
-      const threshold = 95; // Cap the simulated progress at 95%
-      const step = 33; // Increment value
+      const threshold = 95;
+      const step = 33;
 
       for (let i = progress; i < threshold; i += step) {
         const delay =
@@ -53,14 +55,14 @@ const ProgressBar = ({ onComplete, isProcessing }: ProgressBarProps) => {
     };
 
     simulateProgress().catch((err) => {
-      message.error('Progress simulation failed.');
+      messageApi.error('Progress simulation failed.');
       console.error(err);
     });
 
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [isProcessing, networkSpeed, onComplete]);
+  }, [isProcessing, messageApi, networkSpeed, onComplete, progress]);
 
   if (!isProcessing) return null;
 

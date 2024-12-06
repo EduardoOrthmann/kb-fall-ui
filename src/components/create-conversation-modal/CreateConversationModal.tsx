@@ -1,12 +1,11 @@
 'use client';
 
-import { useAppContext } from '@/store/AppContextProvider';
+import { useAppContext, useMessageContext } from '@/store/AppContextProvider';
 import { createConversation } from '@/utils/apiService';
 import { Conversation } from '@/utils/types';
 import { useKeycloak } from '@react-keycloak/web';
 import { useQueryClient } from '@tanstack/react-query';
 import { Form, Input, Modal } from 'antd';
-import useMessage from 'antd/es/message/useMessage';
 import { useState } from 'react';
 
 interface CreateConversationModalProps {
@@ -22,7 +21,7 @@ const CreateConversationModal = ({
   const [newConversationName, setNewConversationName] = useState('');
   const { keycloak } = useKeycloak();
   const queryClient = useQueryClient();
-  const [message, contextHolder] = useMessage();
+  const messageApi = useMessageContext();
 
   const handleCreateConversation = async () => {
     if (!newConversationName.trim()) return;
@@ -42,10 +41,10 @@ const CreateConversationModal = ({
       closeModal();
       setNewConversationName('');
       setSelectedConversation(newConversation._id);
-      message.success('Conversation created successfully!');
+      messageApi.success('Conversation created successfully!');
     } catch (error) {
       console.error(error);
-      message.error('Failed to create conversation.');
+      messageApi.error('Failed to create conversation.');
     }
   };
 
@@ -56,26 +55,23 @@ const CreateConversationModal = ({
   };
 
   return (
-    <>
-      {contextHolder}
-      <Modal
-        title="Create New Conversation"
-        open={open}
-        onCancel={closeModal}
-        onOk={handleCreateConversation}
-      >
-        <Form layout="vertical" style={{ marginTop: '15px' }}>
-          <Form.Item label="Conversation Name" required>
-            <Input
-              value={newConversationName}
-              onChange={(e) => setNewConversationName(e.target.value)}
-              placeholder="Enter conversation name"
-              onKeyUp={handleKeyPress}
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </>
+    <Modal
+      title="Create New Conversation"
+      open={open}
+      onCancel={closeModal}
+      onOk={handleCreateConversation}
+    >
+      <Form layout="vertical" style={{ marginTop: '15px' }}>
+        <Form.Item label="Conversation Name" required>
+          <Input
+            value={newConversationName}
+            onChange={(e) => setNewConversationName(e.target.value)}
+            placeholder="Enter conversation name"
+            onKeyUp={handleKeyPress}
+          />
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 };
 
