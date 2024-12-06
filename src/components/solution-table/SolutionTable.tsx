@@ -1,6 +1,7 @@
 import { Solution } from '@/utils/types';
 import { Table } from 'antd';
 import TableTitle from './TableTitle';
+import { formatDate } from '@/utils/dateUtils';
 
 interface SolutionTableProps {
   data: Solution;
@@ -34,6 +35,8 @@ const SolutionTable = ({ data }: SolutionTableProps) => {
     'apiVersion',
   ];
 
+  const dateFields = ['configurationDate', 'pricingDate'];
+
   const columns = [
     {
       title: 'Field',
@@ -61,7 +64,7 @@ const SolutionTable = ({ data }: SolutionTableProps) => {
     .map(([key, value]) => ({
       key,
       field: fieldNameMapping[key] || key.replace(/_/g, ' '),
-      value: String(value),
+      value: dateFields.includes(key) ? formatDate(value) : String(value),
     }));
 
   return (
@@ -79,3 +82,4 @@ const SolutionTable = ({ data }: SolutionTableProps) => {
 };
 
 export default SolutionTable;
+
