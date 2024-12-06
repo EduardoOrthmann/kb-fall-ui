@@ -13,17 +13,20 @@ export interface Conversation {
 }
 
 export interface Solution {
-  id: string;
-  description: string;
-  environment: string;
-  api_version: string;
-  file: string;
-  bauheri: string;
+  // there is no id
+  ambiente: string; // environment
+  apiVersion: string; // api_version
+  arquivo: string; // file
+  bauherei: string; // bauheri
   baumuster: string;
-  nsr_extension: string;
-  configuration_date: string;
-  price_type: string;
-  pricing_date: string;
-  localized_message: string;
-  is_valid: boolean;
+  configurationDate: number; // configuration_date
+  isValid: string; // is_valid
+  localizedMessage: string; // localized_message
+  nsrExtension: string; // nsr_extension
+  organizationId: string;
+  priceType: string; // price_type
+  pricingDate: number; // pricing_date
+  productStructureId: string;
+  saleSystem: string;
+  sugestao_rpa: string; // description
 }

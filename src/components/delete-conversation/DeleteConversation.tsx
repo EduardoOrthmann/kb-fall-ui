@@ -4,10 +4,11 @@ import { deleteConversation } from '@/utils/apiService';
 import { DeleteOutlined } from '@ant-design/icons';
 import { useKeycloak } from '@react-keycloak/web';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button, message } from 'antd';
+import { Button } from 'antd';
 import { MouseEvent, useState } from 'react';
 import ConfirmDelete from '../confirm-delete/ConfirmDelete';
 import { useAppContext } from '@/store/AppContextProvider';
+import useMessage from 'antd/es/message/useMessage';
 
 interface DeleteButtonProps {
   conversationId: string;
@@ -22,10 +23,13 @@ const DeleteConversation = ({
   const { keycloak } = useKeycloak();
   const queryClient = useQueryClient();
   const { selectedConversation, setSelectedConversation } = useAppContext();
+  const [message, contextHolder] = useMessage();
 
   const deleteMutation = useMutation({
     mutationFn: deleteConversation,
     onSuccess: () => {
+      message.success('Conversation deleted successfully!');
+
       queryClient.invalidateQueries({
         queryKey: ['conversations', keycloak.tokenParsed?.sub],
       });
@@ -34,8 +38,6 @@ const DeleteConversation = ({
         // @ts-expect-error
         setSelectedConversation(null);
       }
-
-      message.success('Conversation deleted successfully!');
 
       if (onDeleteSuccess) onDeleteSuccess();
     },
@@ -62,6 +64,7 @@ const DeleteConversation = ({
 
   return (
     <>
+      {contextHolder}
       <Button
         type="text"
         icon={<DeleteOutlined />}

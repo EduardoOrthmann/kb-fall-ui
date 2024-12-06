@@ -83,7 +83,7 @@ const Home = () => {
     (item: Message): React.ReactNode => {
       if (!item.text) return null;
 
-      const itemText = Array.isArray(item.text) ? item.text[0] : item.text;
+      const itemText: string | Solution = Array.isArray(item.text) ? item.text[0] : item.text;
       const description = item.isJsonFile ? (
         <SolutionTable data={itemText as Solution} />
       ) : (
@@ -106,7 +106,7 @@ const Home = () => {
         </List.Item>
       );
     },
-    [selectedConversation, messages]
+    []
   );
 
   if (!initialized) return null;

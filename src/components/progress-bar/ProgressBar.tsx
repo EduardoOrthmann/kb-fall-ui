@@ -15,7 +15,11 @@ const ProgressBar = ({ onComplete, isProcessing }: ProgressBarProps) => {
 
   useEffect(() => {
     if (!isProcessing) {
-      setProgress(0);
+      if (progress < 100) {
+        setProgress(100); // Finalize to 100% when processing completes
+        message.success('Processing complete.');
+        if (onComplete) onComplete();
+      }
       return;
     }
 
@@ -32,19 +36,20 @@ const ProgressBar = ({ onComplete, isProcessing }: ProgressBarProps) => {
     const delays = getDynamicDelays(networkSpeed);
 
     const simulateProgress = async () => {
-      for (let i = 0; i < 100; i += 33) {
-        const delay = delays[Math.min(i / 33, delays.length - 1)] || 2000;
+      const threshold = 95; // Cap the simulated progress at 95%
+      const step = 33; // Increment value
+
+      for (let i = progress; i < threshold; i += step) {
+        const delay =
+          delays[Math.min(Math.floor(i / step), delays.length - 1)] || 2000;
+
         await new Promise((resolve) => {
           timer = setTimeout(() => {
-            setProgress((prev) => Math.min(prev + 33, 100));
+            setProgress((prev) => Math.min(prev + step, threshold));
             resolve(true);
           }, delay);
         });
       }
-
-      setProgress(100);
-      message.success('Processing complete.');
-      if (onComplete) onComplete();
     };
 
     simulateProgress().catch((err) => {

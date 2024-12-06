@@ -105,9 +105,7 @@ app.prepare().then(() => {
       if (conversation) {
         if (msg.isJsonFile) {
           try {
-            const response = await api.post('/upload-file', {
-              json_request: msg.text,
-            });
+            const response = await api.post('/vans', msg.text);
 
             const aiMessage = {
               text: response.data,
