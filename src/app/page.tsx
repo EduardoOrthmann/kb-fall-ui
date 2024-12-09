@@ -11,6 +11,8 @@ import { Message, Solution } from '@/utils/types';
 import { fetchMessages } from '@/utils/apiService';
 import UploadFile from '@/components/upload-file/UploadFile';
 import SolutionTable from '@/components/solution-table/SolutionTable';
+import useToggle from '@/hooks/useToggle';
+import ThreeDotsLoading from '@/components/three-dots-loading/ThreeDotsLoading';
 
 const { TextArea } = Input;
 
@@ -20,6 +22,8 @@ const Home = () => {
   const { selectedConversation } = useAppContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+  const [isLoadingMessageResponse, toggleIsLoadingMessageResponse] =
+    useToggle(false);
 
   const { data: messages = [] } = useQuery<Message[]>({
     queryKey: ['messages', selectedConversation],
@@ -44,6 +48,7 @@ const Home = () => {
           ['messages', selectedConversation],
           (old) => [...(old || []), message]
         );
+        toggleIsLoadingMessageResponse(false);
         scrollToBottom();
       }
     };
@@ -59,10 +64,13 @@ const Home = () => {
     selectedConversation,
     queryClient,
     scrollToBottom,
+    toggleIsLoadingMessageResponse,
   ]);
 
   const sendMessage = async () => {
     if (!input.trim() || !selectedConversation) return;
+
+    toggleIsLoadingMessageResponse(true);
 
     const messageData: Message = {
       text: input,
@@ -79,35 +87,34 @@ const Home = () => {
     setInput('');
   };
 
-  const handleRenderItem = useCallback(
-    (item: Message): React.ReactNode => {
-      if (!item.text) return null;
+  const handleRenderItem = useCallback((item: Message): React.ReactNode => {
+    if (!item.text) return null;
 
-      const itemText: string | Solution = Array.isArray(item.text) ? item.text[0] : item.text;
-      const description = item.isJsonFile ? (
-        <SolutionTable data={itemText as Solution} />
-      ) : (
-        (item.text as string)
-      );
+    const itemText: string | Solution = Array.isArray(item.text)
+      ? item.text[0]
+      : item.text;
+    const description = item.isJsonFile ? (
+      <SolutionTable data={itemText as Solution} />
+    ) : (
+      (item.text as string)
+    );
 
-      return (
-        <List.Item>
-          <List.Item.Meta
-            avatar={<Avatar icon={<UserOutlined />} />}
-            title={item.user}
-            description={description}
-          />
-          {!item.isJsonFile && (
-            <div className="text-xs text-gray-400">
-              {' '}
-              {new Date(item.timestamp).toLocaleTimeString()}
-            </div>
-          )}
-        </List.Item>
-      );
-    },
-    []
-  );
+    return (
+      <List.Item>
+        <List.Item.Meta
+          avatar={<Avatar icon={<UserOutlined />} />}
+          title={item.user}
+          description={description}
+        />
+        {!item.isJsonFile && (
+          <div className="text-xs text-gray-400">
+            {' '}
+            {new Date(item.timestamp).toLocaleTimeString()}
+          </div>
+        )}
+      </List.Item>
+    );
+  }, []);
 
   if (!initialized) return null;
   if (!keycloak.authenticated)
@@ -116,7 +123,11 @@ const Home = () => {
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <div className="h-96 overflow-y-auto mb-4 custom-scrollbar">
-        <UploadFile conversationId={selectedConversation ?? ''} numberOfMessages={messages.length} />
+        <UploadFile
+          conversationId={selectedConversation ?? ''}
+          numberOfMessages={messages.length}
+        />
+
         <List
           itemLayout="horizontal"
           dataSource={messages}
@@ -125,16 +136,26 @@ const Home = () => {
           }}
           renderItem={handleRenderItem}
         />
+
+        {isLoadingMessageResponse && <ThreeDotsLoading />}
+
         <div ref={messagesEndRef} />
       </div>
+
       <div className="flex gap-2">
         <TextArea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onPressEnter={sendMessage}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              sendMessage();
+            }
+          }}
           placeholder="Type your message..."
           autoSize={{ minRows: 1, maxRows: 4 }}
         />
+
         <Button
           type="primary"
           icon={<SendOutlined />}

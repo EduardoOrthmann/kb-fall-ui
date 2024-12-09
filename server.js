@@ -129,13 +129,19 @@ app.prepare().then(() => {
           socket.broadcast.emit('message', msg);
 
           try {
-            const { data } = await api.post('/generate-response', {
-              conversation_id: conversationId,
-              messages: conversation.messages,
+            console.log(
+              'Sending message to AI:',
+              conversation.messages[conversation.messages.length - 1].text
+            );
+            const { data } = await api.post('/vans/pergunta', {
+              pergunta:
+                conversation.messages[conversation.messages.length - 1].text,
             });
 
+            console.dir(data);
+
             const aiMessage = {
-              text: data.response,
+              text: data.resposta,
               user: 'AI',
               timestamp: new Date().toISOString(),
               conversationId,

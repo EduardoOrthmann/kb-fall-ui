@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+root {
+  --primary: #e20074;
+}
+
+/* chat scrollbar */
 .custom-scrollbar {
   padding-right: 8px;
   scrollbar-width: thin;
@@ -31,6 +36,7 @@
   background-color: #888;
 }
 
+/* sidebar */
 .delete-icon {
   visibility: hidden;
   margin-left: 5px;
@@ -50,7 +56,43 @@
   gap: 10px;
 }
 
+/* upload */
 .upload-file .ant-upload-list-item:hover {
   cursor: pointer;
   color: #1677ff;
 }
+
+/* three dots */
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin: 0 4px;
+  background-color: #e20074;
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out;
+}
+
+.dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0s;
+}
+
+@keyframes bounce {
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
