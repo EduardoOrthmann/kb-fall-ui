@@ -2,14 +2,16 @@
 
 import { InboxOutlined } from '@ant-design/icons';
 import { Upload, UploadFile as IUploadFile, UploadProps } from 'antd';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import OpenJsonFileModal from '../open-json-file-modal/OpenJsonFileModal';
 import { readAsText } from '@/utils/fileUtils';
 import { socket } from '@/socket';
 import { useKeycloak } from '@react-keycloak/web';
-import { Message } from '@/utils/types';
+import { FileData, Message } from '@/utils/types';
 import ProgressBar from '../progress-bar/ProgressBar';
 import { useMessageContext } from '@/store/AppContextProvider';
+import { useQuery } from '@tanstack/react-query';
+import { getFileByConversationId } from '@/utils/apiService';
 
 const { Dragger } = Upload;
 
@@ -22,12 +24,18 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
   const { keycloak } = useKeycloak();
   const messageApi = useMessageContext();
 
-  const [uploadedFile, setUploadedFile] = useState<
-    Record<string, IUploadFile | null>
-  >({});
+  const [uploadedFile, setUploadedFile] = useState<Record<string, IUploadFile | null>>({});
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  const { data: fileData, error: fileDataError } = useQuery<FileData>({
+    queryKey: ['file', conversationId],
+    queryFn: () => getFileByConversationId(conversationId),
+    enabled: !!conversationId,
+    retry: false,
+  });
 
   useEffect(() => {
     setUploadedFile((prevState) => ({
@@ -35,9 +43,32 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
       [conversationId]: null,
     }));
     setFileContent(null);
-  }, [conversationId]);
+  }, [conversationId, messageApi]);
 
-  const handleFileUpload = async (fileContent: string) => {
+  useEffect(() => {
+    if (fileDataError) {
+      messageApi.error('Failed to fetch file data.');
+      return;
+    }
+    if (!fileData) return;
+
+    setFileContent(fileData.fileData);
+  }, [fileData, fileDataError, messageApi]);
+
+  const currentFile = useMemo(() => {
+    if (fileData) {
+      return {
+        uid: conversationId,
+        name: fileData.fileName,
+        status: 'done',
+        url: '',
+        originFileObj: new Blob([fileData.fileData], { type: 'application/json' }),
+      } as IUploadFile;
+    }
+    return uploadedFile[conversationId] || null;
+  }, [fileData, conversationId, uploadedFile]);
+
+  const handleFileUpload = async (fileContent: string, fileName: string) => {
     try {
       setIsProcessing(true);
 
@@ -46,6 +77,7 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
         user: keycloak.tokenParsed?.preferred_username || 'Anonymous',
         timestamp: new Date().toISOString(),
         conversationId: conversationId,
+        fileName: fileName,
         isJsonFile: true,
       };
 
@@ -70,11 +102,36 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
     maxCount: 1,
     listType: 'picture',
     disabled: isProcessing,
+    onRemove() {
+      setUploadedFile((prev) => ({
+        ...prev,
+        [conversationId]: null,
+      }));
+      setFileContent(null);
+    },
     onChange(info) {
       const { file } = info;
 
+      if (!conversationId) {
+        if (!hasError) {
+          messageApi.error('Please select or create a conversation before uploading a file.');
+          setHasError(true);
+        }
+
+        setUploadedFile((prev) => ({
+          ...prev,
+          [conversationId]: null,
+        }));
+        return;
+      }
+
       if (file.status === 'error') {
         messageApi.error(`${info.file.name} file upload failed.`);
+
+        setUploadedFile((prev) => ({
+          ...prev,
+          [conversationId]: null,
+        }));
         return;
       }
 
@@ -88,13 +145,11 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
 
         readAsText(file.originFileObj).then((content) => {
           setFileContent(content);
-          handleFileUpload(content);
+          handleFileUpload(content, file.name);
         });
       }
     },
   };
-
-  const currentFile = uploadedFile[conversationId] || null;
 
   return (
     <div>
@@ -104,13 +159,8 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
           <p className="ant-upload-drag-icon">
             <InboxOutlined />
           </p>
-          <p className="ant-upload-text">
-            Click or drag file to this area to upload
-          </p>
-          <p className="ant-upload-hint m-4">
-            The error within the JSON will be analyzed and the result will be
-            shown in the table below.
-          </p>
+          <p className="ant-upload-text">Click or drag file to this area to upload</p>
+          <p className="ant-upload-hint m-4">The error within the JSON will be analyzed and the result will be shown in the table below.</p>
         </Dragger>
       )}
 
@@ -124,11 +174,7 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
         />
       )}
 
-      <OpenJsonFileModal
-        fileContent={fileContent}
-        open={isModalVisible}
-        closeModal={() => setIsModalVisible(false)}
-      />
+      <OpenJsonFileModal fileContent={fileContent} open={isModalVisible} closeModal={() => setIsModalVisible(false)} />
     </div>
   );
 };

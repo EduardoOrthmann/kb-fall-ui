@@ -39,7 +39,15 @@ const conversationSchema = new mongoose.Schema({
   messages: [messageSchema],
 });
 
+const fileSchema = new mongoose.Schema({
+  fileName: String,
+  fileData: String,
+  conversationId: String,
+  uploadedAt: String,
+});
+
 const Conversation = mongoose.model('Conversation', conversationSchema);
+const File = mongoose.model('File', fileSchema);
 
 app.prepare().then(() => {
   const expressApp = express();
@@ -92,6 +100,28 @@ app.prepare().then(() => {
     }
   });
 
+  // Get file for a conversation
+  expressApp.get('/api/files', async (req, res) => {
+    const { conversationId } = req.query;
+
+    if (!conversationId) {
+      return res.status(400).json({ error: 'conversationId is required' });
+    }
+    
+    try {
+      const file = await File.findOne({ conversationId });
+  
+      if (!file) {
+        return null;
+      }
+  
+      res.json(file);
+    } catch (error) {
+      console.error('Error fetching file:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   const httpServer = createServer(expressApp);
   const io = new Server(httpServer);
 
@@ -106,6 +136,16 @@ app.prepare().then(() => {
         if (msg.isJsonFile) {
           try {
             const response = await api.post('/vans', msg.text);
+
+            const fileData = {
+              fileName: msg.fileName,
+              fileData: msg.text,
+              conversationId: conversationId,
+              uploadedAt: new Date().toISOString(),
+            };
+
+            const newFile = new File(fileData);
+            await newFile.save();
 
             const aiMessage = {
               text: response.data,
@@ -129,16 +169,9 @@ app.prepare().then(() => {
           socket.broadcast.emit('message', msg);
 
           try {
-            console.log(
-              'Sending message to AI:',
-              conversation.messages[conversation.messages.length - 1].text
-            );
             const { data } = await api.post('/vans/pergunta', {
-              pergunta:
-                conversation.messages[conversation.messages.length - 1].text,
+              pergunta: conversation.messages[conversation.messages.length - 1].text,
             });
-
-            console.dir(data);
 
             const aiMessage = {
               text: data.resposta,

@@ -4,6 +4,7 @@ export interface Message {
   timestamp: string;
   conversationId: string;
   isJsonFile?: boolean;
+  fileName?: string;
 }
 
 export interface Conversation {
@@ -13,20 +14,24 @@ export interface Conversation {
 }
 
 export interface Solution {
-  // there is no id
-  ambiente: string; // environment
-  apiVersion: string; // api_version
-  arquivo: string; // file
-  bauherei: string; // bauheri
+  ambiente: string;
+  apiVersion: string;
+  arquivo: string;
+  bauherei: string;
   baumuster: string;
-  configurationDate: number; // configuration_date
-  isValid: string; // is_valid
-  localizedMessage: string; // localized_message
-  nsrExtension: string; // nsr_extension
+  configurationDate: number;
+  isValid: string;
+  localizedMessage: string;
+  nsrExtension: string;
   organizationId: string;
-  priceType: string; // price_type
-  pricingDate: number; // pricing_date
+  priceType: string;
+  pricingDate: number;
   productStructureId: string;
   saleSystem: string;
-  sugestao_rpa: string; // description
+  sugestao_rpa: string;
+}
+
+export interface FileData {
+  fileName: string;
+  fileData: string;
 }

@@ -1,4 +1,5 @@
 import { nextApi } from '@/lib/axios';
+import { AxiosError } from 'axios';
 
 export const fetchMessages = async (conversationId: string) => {
   const response = await nextApi.get('/messages', {
@@ -39,3 +40,20 @@ export const addMessage = async (
   return response.data;
 };
 
+export const getFileByConversationId = async (conversationId: string) => {
+  try {
+    const response = await nextApi.get('/files', {
+      params: { conversationId },
+    });
+
+    return response.data;
+  } catch (error: unknown) {
+    console.log('Error fetching file:', error);
+    if (error instanceof AxiosError && error.response && error.response.status === 404) {
+      return null;
+    }
+
+    console.error('Error fetching file:', error);
+    throw error;
+  }
+}
