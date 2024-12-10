@@ -10,12 +10,13 @@ import { Conversation } from '@/utils/types';
 import { fetchConversations } from '@/utils/apiService';
 import { MenuItemType } from 'antd/es/menu/interface';
 import DeleteConversation from '../delete-conversation/DeleteConversation';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import CreateConversationModal from '../create-conversation-modal/CreateConversationModal';
+import useToggle from '@/hooks/useToggle';
 
 const ChatAside = () => {
   const { selectedConversation, setSelectedConversation } = useAppContext();
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useToggle(false);
   const { keycloak } = useKeycloak();
 
   const { data: conversations = [] } = useQuery<Conversation[]>({
@@ -46,7 +47,7 @@ const ChatAside = () => {
         ),
       })),
     ],
-    [conversations, setSelectedConversation]
+    [conversations, setIsModalVisible, setSelectedConversation]
   );
 
   return (

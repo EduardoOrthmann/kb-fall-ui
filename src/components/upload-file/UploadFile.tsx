@@ -12,6 +12,7 @@ import ProgressBar from '../progress-bar/ProgressBar';
 import { useMessageContext } from '@/store/AppContextProvider';
 import { useQuery } from '@tanstack/react-query';
 import { getFileByConversationId } from '@/utils/apiService';
+import useToggle from '@/hooks/useToggle';
 
 const { Dragger } = Upload;
 
@@ -25,10 +26,10 @@ const UploadFile = ({ conversationId, numberOfMessages }: UploadFileProps) => {
   const messageApi = useMessageContext();
 
   const [uploadedFile, setUploadedFile] = useState<Record<string, IUploadFile | null>>({});
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useToggle(false);
   const [fileContent, setFileContent] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [hasError, setHasError] = useState(false);
+  const [isProcessing, setIsProcessing] = useToggle(false);
+  const [hasError, setHasError] = useToggle(false);
 
   const { data: fileData, error: fileDataError } = useQuery<FileData>({
     queryKey: ['file', conversationId],
