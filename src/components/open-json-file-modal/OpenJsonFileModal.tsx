@@ -1,7 +1,7 @@
 'use client';
 
 import { Modal } from 'antd';
-import SyntaxHighlighter from 'react-syntax-highlighter';
+import dynamic from 'next/dynamic';
 import { a11yDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 
 interface OpenJsonFileModalProps {
@@ -10,16 +10,21 @@ interface OpenJsonFileModalProps {
   closeModal: () => void;
 }
 
-const OpenJsonFileModal = ({
-  fileContent,
-  open,
-  closeModal,
-}: OpenJsonFileModalProps) => {
+const SyntaxHighlighter = dynamic(() => import('react-syntax-highlighter'), {
+  ssr: false,
+  loading: () => <p>Loading...</p>,
+});
+
+const OpenJsonFileModal = ({ fileContent, open, closeModal }: OpenJsonFileModalProps) => {
   return (
     <Modal title="File Details" open={open} onCancel={closeModal} footer={null}>
-      <SyntaxHighlighter language="json" style={a11yDark}>
-        {fileContent ?? 'No content to display'}
-      </SyntaxHighlighter>
+      {fileContent ? (
+        <SyntaxHighlighter language="json" style={a11yDark}>
+          {fileContent}
+        </SyntaxHighlighter>
+      ) : (
+        <p>Loading file content...</p>
+      )}
     </Modal>
   );
 };
