@@ -25,15 +25,11 @@ const UILayout = ({
       >
         <div style={{ display: 'flex', gap: '1rem' }}>
           <Link href="/">
-            <Image
-              src={TSystemsLogo}
-              alt="logo"
-              width={120}
-              height={70}
-              style={{ filter: 'invert(1) brightness(100) contrast(1)' }}
-            />
+            <Image src={TSystemsLogo} alt="logo" width={120} height={70} style={{ filter: 'invert(1) brightness(100) contrast(1)' }} />
           </Link>
-          <div className="text-lg font-bold">KbVall Copilot</div>
+          <div className="text-lg font-bold" style={{ color: 'white' }}>
+            KbVall Copilot
+          </div>
         </div>
         <AuthButton />
       </Header>
